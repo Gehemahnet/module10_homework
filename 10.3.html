@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .chat__container{
+      width: 400px;
+      height: 55vh;
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      border: rgb(0, 162, 255) 2px solid;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .chat__container-header{
+      margin: 10px 10px;
+      padding: 10px;
+      border: rgb(0, 162, 255) 2px solid;
+      border-radius: 5px;
+    }
+
+    .chat__container-header button{
+      border: rgb(0, 162, 255) 1px solid;
+      border-radius: 5px;
+      background: rgb(131, 206, 249);
+      font-weight: bold;
+      width: 25%;
+    }
+
+    #user-message{
+      width: 45%;
+    }
+
+    .chat__container-body{
+      max-height: 80%;
+      margin: 10px;
+      border: rgb(0, 162, 255) 2px solid;
+      border-radius: 5px;
+      overflow-y: scroll;
+
+      display:flex;
+      flex-direction: column;
+      align-items: flex-end;
+      /* Все сообщения в чате по дефолту распологаются справа. 
+      В дальнейшем ответы от сервера будут позиционироваться слева и окрашиваться в другой цвет. */
+    }
+
+    .chat-element{
+      max-width: 40%;
+      padding: 5px;
+      margin: 10px 10px 0 10px;
+      border: 1px solid black;
+      border-radius: 5px;
+      background: rgb(182, 255, 255);
+    }
+
+    .chat-element p {
+      margin: 0;
+      word-wrap: break-word;
+    }
+
+    .chat-element:last-child{
+      margin-bottom: 10px;
+    }
+
+    .chat-element.answer{
+      background: rgb(255, 172, 172);
+      align-self: flex-start;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="chat__container">
+    <div class="chat__container-header">
+      <input id="user-message" type="text" placeholder="Your message">
+      <button id="send-message">Send</button>
+      <button id="send-position">My position</button>
+    </div>
+    <div id="chat-container" class="chat__container-body">
+    </div>
+  </div>
+  <script>
+    // Открытие соединения при загрузке страницы.
+    window.onload = function(){
+      websocket = new WebSocket(echoUrl)
+      console.log('CONNECTED')
+      websocket.onmessage = function(evt){
+        if (evt.data.includes('http')){
+          console.log('Ответ с этого сервера в чат не выводится')
+        }
+        else {
+        let answer = evt.data
+        let chatElement = document.createElement('div');
+        chatElement.className = 'chat-element'
+        chatElement.classList.add('answer')
+        chatElement.innerHTML = `<p>${answer}</p>`;
+        let newlyElement = chatNode.appendChild(chatElement)
+        }
+      }
+    }
+    window.onclose = function(){
+      websocket.close();
+      websocket = null;
+    }
+
+    const displayQuestion = function(message){
+      let chatElement = document.createElement('div');
+      chatElement.className = 'chat-element'
+      chatElement.innerHTML = `<p>${message}</p>`;
+      let newlyElement = chatNode.appendChild(chatElement);
+    }
+
+    const echoUrl = 'ws://echo-ws-service.herokuapp.com';
+    const psnUrl ='https://www.openstreetmap.org/#map=16/';
+    const chatNode = document.getElementById('chat-container');
+    const sendButton = document.getElementById('send-message');
+    const sendPositionButton = document.getElementById('send-position');
+
+    // Обработчик клика на кнопку отправить сообщение.
+    sendButton.addEventListener('click', () =>{
+      let message = document.getElementById('user-message').value
+      if (message !=''){
+        displayQuestion(message)
+        websocket.send(message);
+      }
+      else {
+        alert('Окно ввода пустое')
+      }
+    })
+    sendPositionButton.addEventListener('click', () => {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const {coords} = position;
+        let message = `${psnUrl}${coords.latitude}/${coords.longitude}` 
+        displayQuestion(message)
+        websocket.send(message)
+      })
+    })
+  </script>
+</body>
+</html>
